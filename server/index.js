@@ -45,7 +45,7 @@ app.post("/notify-new-messages", (req, res) => {
 });
 
 
-app.get('/', () => {
+app.get('/', (req, res) => {
   res.status(200).json({ message: "Hits / endpoints" });
 })
 
