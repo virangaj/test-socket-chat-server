@@ -45,7 +45,8 @@ app.post("/notify-new-messages", (req, res) => {
 });
 
 
-app.get('/', () =>{
+app.get('/', () => {
+  console.log("hits the / endpoint")
   return "Welcome to chat app"
 })
 
