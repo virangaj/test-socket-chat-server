@@ -44,6 +44,12 @@ app.post("/notify-new-messages", (req, res) => {
     });
 });
 
+
+app.get('/', () =>{
+  return "Welcome to chat app"
+})
+
+
 function fetchMessages(payperviewId, token) {
   const config = {
     headers: {
