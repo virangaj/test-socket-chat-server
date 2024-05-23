@@ -7,7 +7,7 @@ const fs = require("fs");
 require('dotenv').config();
 const fastify = require('fastify')({ logger: true });
 const fastifySocketIo = require('fastify-socket.io');
-const cors = require("cors");
+const cors = require('@fastify/cors');
 
 
 // Additional requires for SSR if needed
@@ -16,13 +16,13 @@ const API_BASE_URL = process.env.BACKEND_SERVER;
 const app = express();
 const server = http.createServer(app);
 app.use(cors());
-const io = socketIo(server, {
-  cors: {
-    origin: ["https://dofe.ayozat.co.uk", "https://test-socket-chat-server.onrender.com"], 
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"],
-    credentials: true
-  }
+
+// Register CORS plugin for Fastify
+fastify.register(cors, {
+  origin: ["*"],
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"],
+  credentials: true
 });
 
 const PORT = process.env.PORT || 3001;
