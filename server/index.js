@@ -21,7 +21,12 @@ fastify.register(require('@fastify/static'), {
 
 // Register socket.io plugin
 fastify.register(socketIo, {
-  // socket.io options here
+  cors: {
+    origin: "*", // Adjust this to match the client's URL or use '*' for wide access
+    methods: ["GET", "POST"],
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"]
+  }
 });
 
 // Define a route for notifications
