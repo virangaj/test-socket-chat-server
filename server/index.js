@@ -1,9 +1,7 @@
 const express = require("express");
 const http = require("http");
-const socketIo = require("socket.io");
 const axios = require("axios");
 const path = require("path");
-const fs = require("fs");
 require('dotenv').config();
 const fastify = require('fastify')({ logger: true });
 const fastifySocketIo = require('fastify-socket.io');
