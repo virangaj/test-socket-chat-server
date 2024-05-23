@@ -18,12 +18,13 @@ const server = http.createServer(app);
 app.use(cors());
 const io = socketIo(server, {
   cors: {
-    origin: "*",
+    origin: ["https://dofe.ayozat.co.uk", "https://test-socket-chat-server.onrender.com"], 
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
-    credentials: true,
-  },
+    credentials: true
+  }
 });
+
 const PORT = process.env.PORT || 3001;
 
 // Register the fastify-socket.io plugin
