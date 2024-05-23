@@ -5,7 +5,11 @@ const axios = require("axios");
 const path = require("path");
 const fs = require("fs");
 require('dotenv').config();
+const fastify = require('fastify')({ logger: true });
+const fastifySocketIo = require('fastify-socket.io');
 const cors = require("cors");
+
+
 // Additional requires for SSR if needed
 const API_BASE_URL = process.env.BACKEND_SERVER;
 
@@ -21,6 +25,9 @@ const io = socketIo(server, {
   },
 });
 const PORT = process.env.PORT || 3001;
+
+// Register the fastify-socket.io plugin
+fastify.register(fastifySocketIo);
 
 app.use(express.json());
 app.use(
@@ -72,53 +79,61 @@ function sendMessage(payperviewId, data, token) {
   );
 }
 
-io.on("connection", (socket) => {
-  console.log("---A user connected");
-  socket.on("joinRoom", ({ payperviewId, token }) => {
-    socket.join(`room-${payperviewId}`);
-    fetchMessages(payperviewId, token)
-      .then((messages) => {
-        const data = {
-          data:messages.data,
-          firstRender:true
-        }
-        io.to(`room-${payperviewId}`).emit("updateMessages", data);
-      })
-      .catch((error) => {
-        console.error("Error fetching messages:", error);
-      });
-    console.log(`---User joined room-${payperviewId}---`);
-  });
+// Setup WebSocket connections
+fastify.ready(err => {
+  if (err) throw err;
 
-  socket.on("send-message", ({ payperviewId, message, token }) => {
-    const chat = {
-      message: message,
-    };
+  fastify.io.on('connection', (socket) => {
+    fastify.log.info('---A user connected');
     
-    sendMessage(payperviewId, chat, token)
-      .then((res) => {
-        console.log(res);
+    socket.on('joinRoom', async ({ payperviewId, token }) => {
+      socket.join(`room-${payperviewId}`);
+      try {
+        const messages = await fetchMessages(payperviewId, token);
         const data = {
-          data:res.data,
-          firstRender:false
-        }
-        io.to(`room-${payperviewId}`).emit("updateMessages", data);
-      })
-      .catch((error) => {
-        console.error("Error fetching messages:", error);
-      });
-  });
+          data: messages.data,
+          firstRender: true
+        };
+        fastify.io.to(`room-${payperviewId}`).emit('updateMessages', data);
+      } catch (error) {
+        fastify.log.error('Error fetching messages:', error);
+      }
+      fastify.log.info(`---User joined room-${payperviewId}---`);
+    });
 
-  socket.on("chat-onChange", ({payperviewId, onChange, userId}) => {
-    io.to(`room-${payperviewId}`).emit("chat-onChangeReceive", {onChange, userId});
-    console.log("typing---", {payperviewId, onChange, userId});
-  })
+    socket.on('send-message', async ({ payperviewId, message, token }) => {
+      const chat = {
+        message: message
+      };
 
-  socket.on("disconnect", () => {
-    console.log("User disconnected---");
+      try {
+        const res = await sendMessage(payperviewId, chat, token);
+        const data = {
+          data: res.data,
+          firstRender: false
+        };
+        fastify.io.to(`room-${payperviewId}`).emit('updateMessages', data);
+      } catch (error) {
+        fastify.log.error('Error sending message:', error);
+      }
+    });
+
+    socket.on('chat-onChange', ({ payperviewId, onChange, userId }) => {
+      fastify.io.to(`room-${payperviewId}`).emit('chat-onChangeReceive', { onChange, userId });
+      fastify.log.info('typing---', { payperviewId, onChange, userId });
+    });
+
+    socket.on('disconnect', () => {
+      fastify.log.info('User disconnected---');
+    });
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`Server is listening on port ${PORT}`);
+// Start the server
+fastify.listen({ port: PORT, host: '0.0.0.0' }, (err, address) => {
+  if (err) {
+    fastify.log.error(err);
+    process.exit(1);
+  }
+  fastify.log.info(`Server listening on ${address}`);
 });
