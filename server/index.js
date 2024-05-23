@@ -7,9 +7,9 @@ require('dotenv').config();
 const PORT = process.env.PORT || 3001;
 const API_BASE_URL = process.env.BACKEND_SERVER;
 
-// CORS setup for Fastify
+// Register CORS plugin with appropriate settings
 fastify.register(require('@fastify/cors'), {
-  origin: true,
+  origin: "*",  // Consider specifying more restrictive origins for security
   credentials: true
 });
 
