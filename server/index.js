@@ -1,134 +1,94 @@
-const express = require("express");
-const http = require("http");
-const socketIo = require("socket.io");
-const axios = require("axios");
-const path = require("path");
-const fs = require("fs");
-require('dotenv').config();
 const fastify = require('fastify')({ logger: true });
-const fastifySocketIo = require('fastify-socket.io');
-const cors = require('@fastify/cors');
+const socketIo = require('fastify-socket.io');
+const path = require('path');
+const axios = require('axios');
+require('dotenv').config();
 
-
-// Additional requires for SSR if needed
+const PORT = process.env.PORT || 3001;
 const API_BASE_URL = process.env.BACKEND_SERVER;
 
-const app = express();
-const server = http.createServer(app);
-app.use(cors());
-
-// Register CORS plugin for Fastify
-fastify.register(cors, {
-  origin: ["*"],
-  methods: ["GET", "POST"],
-  allowedHeaders: ["Content-Type"],
+// Register CORS plugin with appropriate settings
+fastify.register(require('@fastify/cors'), {
+  origin: "*",  // Consider specifying more restrictive origins for security
   credentials: true
 });
 
-const PORT = process.env.PORT || 3001;
-
-// Register the fastify-socket.io plugin
-fastify.register(fastifySocketIo);
-
-app.use(express.json());
-app.use(
-  express.static(path.resolve(__dirname, "..", "build"), { index: false })
-);
-
-// Endpoint for Laravel to call when new data is available
-app.post("/notify-new-messages", (req, res) => {
-  const { payperviewId, token } = req.body;
-  if (!payperviewId) {
-    return res.status(400).json({ message: "payperviewId is required" });
-  }
-  fetchMessages(payperviewId, token)
-    .then((messages) => {
-      io.to(`room-${payperviewId}`).emit("updateMessages", messages.data);
-      res.status(200).json({ message: "Data updated successfully." });
-    })
-    .catch((error) => {
-      console.error("Error fetching messages:", error);
-      res.status(500).json({ message: "Failed to fetch messages." });
-    });
+// Static files serving from build directory
+fastify.register(require('@fastify/static'), {
+  root: path.join(__dirname, '..', 'build'),
+  prefix: '/'
 });
 
+// Register socket.io plugin
+fastify.register(socketIo, {
+  // socket.io options here
+});
 
-app.get('/', (req, res) => {
-  res.status(200).json({ message: "Hits / endpoints" });
-})
+// Define a route for notifications
+fastify.post('/notify-new-messages', async (request, reply) => {
+  const { payperviewId, token } = request.body;
+  if (!payperviewId) {
+    return reply.status(400).send({ message: "payperviewId is required" });
+  }
+  try {
+    const messages = await fetchMessages(payperviewId, token);
+    fastify.io.to(`room-${payperviewId}`).emit('updateMessages', messages.data);
+    return reply.send({ message: "Data updated successfully." });
+  } catch (error) {
+    fastify.log.error('Error fetching messages:', error);
+    return reply.status(500).send({ message: "Failed to fetch messages." });
+  }
+});
 
-
-function fetchMessages(payperviewId, token) {
-  const config = {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  };
-  return axios.get(`${API_BASE_URL}/ppv/${payperviewId}/messages`, config);
-}
-
-function sendMessage(payperviewId, data, token) {
-  const config = {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  };
-  return axios.post(
-    `${API_BASE_URL}/ppv/${payperviewId}/message`,
-    data,
-    config
-  );
-}
-
-// Setup WebSocket connections
+// WebSocket setup
 fastify.ready(err => {
   if (err) throw err;
 
   fastify.io.on('connection', (socket) => {
-    fastify.log.info('---A user connected');
-    
+    fastify.log.info('A user connected');
+
     socket.on('joinRoom', async ({ payperviewId, token }) => {
       socket.join(`room-${payperviewId}`);
       try {
         const messages = await fetchMessages(payperviewId, token);
-        const data = {
-          data: messages.data,
-          firstRender: true
-        };
-        fastify.io.to(`room-${payperviewId}`).emit('updateMessages', data);
+        socket.emit('updateMessages', { data: messages.data, firstRender: true });
       } catch (error) {
         fastify.log.error('Error fetching messages:', error);
       }
-      fastify.log.info(`---User joined room-${payperviewId}---`);
     });
 
     socket.on('send-message', async ({ payperviewId, message, token }) => {
-      const chat = {
-        message: message
-      };
-
       try {
-        const res = await sendMessage(payperviewId, chat, token);
-        const data = {
-          data: res.data,
-          firstRender: false
-        };
-        fastify.io.to(`room-${payperviewId}`).emit('updateMessages', data);
+        const res = await sendMessage(payperviewId, { message }, token);
+        fastify.io.to(`room-${payperviewId}`).emit('updateMessages', { data: res.data, firstRender: false });
       } catch (error) {
         fastify.log.error('Error sending message:', error);
       }
     });
 
-    socket.on('chat-onChange', ({ payperviewId, onChange, userId }) => {
-      fastify.io.to(`room-${payperviewId}`).emit('chat-onChangeReceive', { onChange, userId });
-      fastify.log.info('typing---', { payperviewId, onChange, userId });
-    });
-
     socket.on('disconnect', () => {
-      fastify.log.info('User disconnected---');
+      fastify.log.info('User disconnected');
     });
   });
 });
+
+// Function to fetch messages
+async function fetchMessages(payperviewId, token) {
+  const config = {
+    headers: { Authorization: `Bearer ${token}` }
+  };
+  const response = await axios.get(`${API_BASE_URL}/ppv/${payperviewId}/messages`, config);
+  return response.data;
+}
+
+// Function to send a message
+async function sendMessage(payperviewId, data, token) {
+  const config = {
+    headers: { Authorization: `Bearer ${token}` }
+  };
+  const response = await axios.post(`${API_BASE_URL}/ppv/${payperviewId}/message`, data, config);
+  return response.data;
+}
 
 // Start the server
 fastify.listen({ port: PORT, host: '0.0.0.0' }, (err, address) => {
