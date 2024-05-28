@@ -9,8 +9,20 @@ const API_BASE_URL = process.env.BACKEND_SERVER;
 
 // Register CORS plugin with appropriate settings
 fastify.register(require("@fastify/cors"), {
-  origin: "*", // Consider specifying more restrictive origins for security
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    console.log("origin: " + origin)
+    // List of allowed origins
+    const allowedOrigins = ['https://dofe.ayozat.co.uk/', '*'];
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    } else {
+      return callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
 });
 
 // Static files serving from build directory
@@ -94,7 +106,7 @@ async function fetchMessages(payperviewId, token) {
     `${API_BASE_URL}/ppv/${payperviewId}/messages`,
     config
   );
-  console.log(response.data);
+  // console.log(response.data);
   return response.data;
 }
 
@@ -108,7 +120,7 @@ async function sendMessage(payperviewId, data, token) {
     data,
     config
   );
-  console.log(response);
+  // console.log(response);
   return response.data;
 }
 
