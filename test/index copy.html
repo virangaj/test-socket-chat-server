@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Room</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        #chatArea {
+            background-color: #f4f4f4;
+            padding: 10px;
+            margin-top: 20px;
+            height: 300px;
+            overflow-y: scroll;
+        }
+
+        #messages {
+            width: 100%;
+            height: 100%;
+        }
+
+        #messageInput,
+        #roomName {
+            width: 200px;
+            padding: 10px;
+            margin-right: 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Chat Room</h1>
+    <input type="text" id="roomName" placeholder="Enter Room ID">
+    <input type="text" id="token" placeholder="Enter Your Token">
+    <button onclick="joinRoom()">Join Room</button>
+    <div id="chatArea">
+        <textarea id="messages" readonly></textarea>
+    </div>
+    <input type="text" id="messageInput" placeholder="Type a message...">
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+        var ws;
+
+        function joinRoom() {
+            const roomName = document.getElementById('roomName').value;
+            const token = document.getElementById('token').value;
+            const host = location.hostname;
+            const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+
+            ws = new WebSocket(`${protocol}://${host}:8000/ws/${roomName}/${token}`);
+
+            ws.onopen = function () {
+                console.log('Connected to the chat room.');
+            };
+
+            ws.onmessage = function (event) {
+                const messages = document.getElementById('messages');
+                try {
+                    const data = JSON.parse(event.data); // Attempt to parse the incoming message as JSON
+                    if (data.message) {
+                        messages.value += data.message + "\n"; // Use the 'message' key if available
+                    } else {
+                        // Handle case where 'message' is not a key in the received JSON object
+                        console.log("Received JSON does not contain 'message' key:", data);
+                        messages.value += "Received an unexpected format of data.\n";
+                    }
+                } catch (error) {
+                    // Handle parsing errors, e.g., when event.data is not a JSON string
+                    console.log("Error parsing JSON from WebSocket message:", error);
+                    messages.value += "Received non-JSON data: " + event.data + "\n";
+                }
+            };
+
+
+
+            ws.onclose = function (event) {
+                console.log('Disconnected from chat room:', event);
+            };
+
+            ws.onerror = function (error) {
+                console.log('WebSocket Error:', error);
+            };
+        }
+
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            if (message !== '') {
+                const data = JSON.stringify({ content: message });
+                ws.send(data);
+                messageInput.value = ''; // Clear input field
+            }
+        }
+
+
+
+    </script>
+</body>
+
+</html>

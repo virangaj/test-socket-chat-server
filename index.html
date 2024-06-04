@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Room</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        #chatArea {
+            background-color: #f4f4f4;
+            padding: 10px;
+            margin-top: 20px;
+            height: 300px;
+            overflow-y: scroll;
+        }
+
+        #messages {
+            width: 100%;
+            height: 100%;
+        }
+
+        #messageInput,
+        #roomName {
+            width: 200px;
+            padding: 10px;
+            margin-right: 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Chat Room</h1>
+    <input type="text" id="roomName" placeholder="Enter Room ID">
+    <input type="text" id="token" placeholder="Enter Your Token">
+    <button onclick="joinRoom()">Join Room</button>
+    <div id="chatArea">
+        <textarea id="messages" readonly></textarea>
+    </div>
+    <input type="text" id="messageInput" placeholder="Type a message...">
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+        var ws;
+
+        function joinRoom() {
+    const roomName = document.getElementById('roomName').value;
+    const token = document.getElementById('token').value;
+    const host = location.hostname;
+    const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+
+    ws = new WebSocket(`${protocol}://${host}:8000/ws/${roomName}/${token}`);
+
+    ws.onopen = function () {
+        console.log('Connected to the chat room.');
+    };
+
+    ws.onmessage = function (event) {
+        const messages = document.getElementById('messages');
+        messages.value += event.data + "\n";  // Changed to handle simple text
+    };
+
+    ws.onclose = function (event) {
+        console.log('Disconnected from chat room:', event);
+    };
+
+    ws.onerror = function (error) {
+        console.log('WebSocket Error:', error);
+    };
+}
+
+function sendMessage() {
+    const messageInput = document.getElementById('messageInput');
+    if (messageInput.value.trim() !== '') {
+        ws.send(messageInput.value);
+        messageInput.value = ''; 
+    }
+}
+
+
+
+    </script>
+</body>
+
+</html>

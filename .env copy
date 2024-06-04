@@ -1,0 +1,7 @@
+REACT_APP_BACKEND_SERVER=https://c-1y15z120-t12c.ayozat.com/api
+REACT_APP_API_ORIGIN=https://1y15z120-t12c.ayozat.com/api
+REACT_APP_NODE_ENV=production
+REACT_APP_FRONTEND_URL=https://www.ayozat.com
+REACT_APP_VIDEOPLAYER_IFRAME_URL=https://c-1y15z120-t12c.ayozat.com/iframe/VideoPlayer.html
+REACT_APP_PLAYERHOST=https://c-1y15z120-t12c.ayozat.com
+PORT=3000
