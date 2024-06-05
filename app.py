@@ -1,7 +1,7 @@
 from fastapi import FastAPI, WebSocket, HTTPException, status
 import httpx
 from typing import Dict, List
-
+import os
 app = FastAPI()
 API_BASE_URL = "https://dapi.ayozat.co.uk/api"
 
@@ -56,4 +56,4 @@ async def websocket_endpoint(websocket: WebSocket, payperviewId: str, token: str
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=5000)
