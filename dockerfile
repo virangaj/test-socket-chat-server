@@ -1,24 +1,26 @@
-# Use the official Node.js image.
-# Use 'node:lts' for the latest LTS version or specify a version like 'node:14'
-FROM node:18.18.0
+# Use an official Node.js runtime as a parent image
+FROM node:18
 
-# Create and change to the app directory.
+# Set the working directory in the container
 WORKDIR /usr/src/app
 
-# Copy the package.json and package-lock.json files.
+# Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install dependencies.
+# Install dependencies
 RUN npm install
 
-# Copy the rest of the application code.
+# Copy the rest of the application code
 COPY . .
 
-# Change to the server directory
-WORKDIR /usr/src/app/server
+# Copy the .env file
+COPY .env .env
 
-# Expose the port the app runs on.
+# Expose the port the app runs on
 EXPOSE 3001
 
-# Define the command to run the app.
-CMD ["node", "index.js"]
+# Define environment variable
+ENV PORT=3001
+
+# Run the application
+CMD ["node", "server/index.js"]
