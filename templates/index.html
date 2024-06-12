@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>WebSocket Chat Client</title>
+  </head>
+  <body>
+    <h1>WebSocket Chat Client</h1>
+    <input type="text" id="messageInput" placeholder="Enter message" />
+    <button onclick="sendMessage()">Send Message</button>
+    <div id="messages"></div>
+
+    <script>
+      // Replace this with your server's WebSocket URL
+      const socket = new WebSocket("ws://localhost:3001");
+
+      // Connection opened
+      socket.addEventListener("open", (event) => {
+        console.log("Connected to WebSocket server");
+        // Example of joining a room
+        socket.send(
+          JSON.stringify({
+            event: "joinRoom",
+            data: { payperviewId: 64, token: "1635|3hGrVlFzy5LNfvufRdZlATjkgk6r9ERWduCkLXDd" },
+          })
+        );
+      });
+
+      // Listen for messages
+      socket.addEventListener("message", (event) => {
+        const receivedMessage = JSON.parse(event.data);
+        console.log("Message from server:", receivedMessage);
+        displayMessage(receivedMessage);
+      });
+
+      // Error handling
+      socket.addEventListener("error", (event) => {
+        console.error("WebSocket error:", event);
+      });
+
+      // Connection closed
+      socket.addEventListener("close", (event) => {
+        console.log("WebSocket connection closed:", event);
+      });
+
+      function sendMessage() {
+        const messageInput = document.getElementById("messageInput");
+        const message = messageInput.value;
+
+        if (message) {
+          socket.send(
+            JSON.stringify({
+              event: "send-message",
+              data: {
+                payperviewId: 64,
+                message: message,
+                token: "1635|3hGrVlFzy5LNfvufRdZlATjkgk6r9ERWduCkLXDd",
+              },
+            })
+          );
+          messageInput.value = "";
+        }
+      }
+
+      function displayMessage(message) {
+        const messagesDiv = document.getElementById("messages");
+        const messageElement = document.createElement("p");
+        message.data.data.map((d)=>{
+            console.log(d.message)
+            messageElement.textContent = d.user.username + " : " + d.message;
+            messagesDiv.appendChild(messageElement);
+        })
+        
+      }
+    </script>
+  </body>
+</html>

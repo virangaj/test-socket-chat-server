@@ -21,6 +21,7 @@
     "fastify-socket.io": "^5.0.0",
     "mysql2": "^3.9.7",
     "nodemon": "^3.1.0",
-    "socket.io": "^4.4.1"
+    "socket.io": "^4.4.1",
+    "ws": "^8.17.0"
   }
 }
