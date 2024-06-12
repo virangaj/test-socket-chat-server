@@ -27,6 +27,7 @@
 
       // Listen for messages
       socket.addEventListener("message", (event) => {
+        console.log(event)
         const receivedMessage = JSON.parse(event.data);
         console.log("Message from server:", receivedMessage);
         displayMessage(receivedMessage);
@@ -63,13 +64,10 @@
 
       function displayMessage(message) {
         const messagesDiv = document.getElementById("messages");
-        const messageElement = document.createElement("p");
-        message.data.data.map((d)=>{
-            console.log(d.message)
-            messageElement.textContent = d.user.username + " : " + d.message;
-            messagesDiv.appendChild(messageElement);
-        })
+        const messageElement = document.createElement("div");
         
+        messageElement.textContent = JSON.stringify(message);
+        messagesDiv.appendChild(messageElement);
       }
     </script>
   </body>
