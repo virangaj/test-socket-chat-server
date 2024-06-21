@@ -22,8 +22,12 @@ fastify.register(require("@fastify/cors"), {
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS'],
+  methods: ['GET', 'POST', 'OPTIONS', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-token', 'x-otp-method', 'x-otp-code'],
+  exposedHeaders: ['Content-Type', 'Authorization', 'x-token']
 });
+
+
 
 // Static files serving from build directory
 // fastify.register(require('@fastify/static'), {
@@ -52,6 +56,10 @@ fastify.post("/notify-new-messages", async (request, reply) => {
   }
 });
 
+fastify.get('/', async (request, reply) => {
+  return reply.status(200).send({message: "Server ready"});
+})
+
 // WebSocket setup
 fastify.ready((err) => {
   if (err) throw err;
@@ -60,6 +68,7 @@ fastify.ready((err) => {
     fastify.log.info("A user connected");
 
     socket.on("joinRoom", async ({ payperviewId, token }) => {
+      console.log("Request to join room", { payperviewId, token });
       socket.join(`room-${payperviewId}`);
       try {
         const messages = await fetchMessages(payperviewId, token);
@@ -71,7 +80,8 @@ fastify.ready((err) => {
 
     socket.on("send-message", async ({ payperviewId, message, token }) => {
       try {
-        console.log({ payperviewId, message, token })
+        console.log("Request to send message", { payperviewId, message, token });
+
         const res = await sendMessage(payperviewId, {message}, token);
         fastify.io
           .to(`room-${payperviewId}`)
@@ -82,11 +92,11 @@ fastify.ready((err) => {
     });
 
     socket.on("chat-onChange", ({ payperviewId, onChange, userId }) => {
+      console.log("Request to typing---", { payperviewId, onChange, userId });
       try {
         fastify.io
           .to(`room-${payperviewId}`)
           .emit("chat-onChangeReceive", { onChange, userId });
-        console.log("typing---", { payperviewId, onChange, userId });
       } catch (error) {
         fastify.log.error("Error sending message:", error);
       }
@@ -99,6 +109,7 @@ fastify.ready((err) => {
 
 // Function to fetch messages
 async function fetchMessages(payperviewId, token) {
+  console.log("Send request to fetch messages from server", { payperviewId, token });
   const config = {
     headers: { Authorization: `Bearer ${token}` },
   };
@@ -112,6 +123,7 @@ async function fetchMessages(payperviewId, token) {
 
 // Function to send a message
 async function sendMessage(payperviewId, data, token) {
+  console.log("Send request to send message to server", { payperviewId, data, token });
   const config = {
     headers: { Authorization: `Bearer ${token}` },
   };
