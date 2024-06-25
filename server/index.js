@@ -8,26 +8,16 @@ const PORT = process.env.PORT || 3001;
 const API_BASE_URL = process.env.BACKEND_SERVER;
 
 // Register CORS plugin with appropriate settings
-fastify.register(require("@fastify/cors"), {
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    console.log("origin: " + origin)
-    // List of allowed origins
-    const allowedOrigins = ['https://dofe.ayozat.co.uk/', '*'];
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      return callback(null, true);
-    } else {
-      return callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'OPTIONS', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-token', 'x-otp-method', 'x-otp-code'],
-  exposedHeaders: ['Content-Type', 'Authorization', 'x-token']
-});
+// fastify.register(require("@fastify/cors"), {
+//   origin: "*",
+//   credentials: true,
+//   methods: ['GET', 'POST', 'OPTIONS', 'DELETE'],
+//   allowedHeaders: ['Content-Type', 'Authorization', 'x-token', 'x-otp-method', 'x-otp-code'],
+//   exposedHeaders: ['Content-Type', 'Authorization', 'x-token'],
+//   accessControlAllowOrigin: ['https://dofe.ayozat.co.uk/', 'localhost:3000'],
+// });
 
-
+fastify.register(require('@fastify/cors'));
 
 // Static files serving from build directory
 // fastify.register(require('@fastify/static'), {
@@ -41,20 +31,20 @@ fastify.register(socketIo, {
 });
 
 // Define a route for notifications
-fastify.post("/notify-new-messages", async (request, reply) => {
-  const { payperviewId, token } = request.body;
-  if (!payperviewId) {
-    return reply.status(400).send({ message: "payperviewId is required" });
-  }
-  try {
-    const messages = await fetchMessages(payperviewId, token);
-    fastify.io.to(`room-${payperviewId}`).emit("updateMessages", messages.data);
-    return reply.send({ message: "Data updated successfully." });
-  } catch (error) {
-    fastify.log.error("Error fetching messages:", error);
-    return reply.status(500).send({ message: "Failed to fetch messages." });
-  }
-});
+// fastify.post("/notify-new-messages", async (request, reply) => {
+//   const { payperviewId, token } = request.body;
+//   if (!payperviewId) {
+//     return reply.status(400).send({ message: "payperviewId is required" });
+//   }
+//   try {
+//     const messages = await fetchMessages(payperviewId, token);
+//     fastify.io.to(`room-${payperviewId}`).emit("updateMessages", messages.data);
+//     return reply.send({ message: "Data updated successfully." });
+//   } catch (error) {
+//     fastify.log.error("Error fetching messages:", error);
+//     return reply.status(500).send({ message: "Failed to fetch messages." });
+//   }
+// });
 
 fastify.get('/', async (request, reply) => {
   return reply.status(200).send({message: "Server ready"});
