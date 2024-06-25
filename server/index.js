@@ -28,8 +28,8 @@ fastify.register(require('@fastify/cors'));
 // Register socket.io plugin
 fastify.register(socketIo, {
  cors: {
-      origin: "http://localhost:3000", // your client URL
-      methods: ["GET", "POST"]
+      origin: "*", // your client URL
+      methods: ["GET", "POST", "DELETE"]
    }
 });
 
